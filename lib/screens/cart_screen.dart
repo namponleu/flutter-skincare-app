@@ -1,9 +1,11 @@
+import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../widgets/bottom_navigation.dart';
+// import '../widgets/bottom_navigation.dart';
 import '../models/cart_item.dart';
 import '../lang/index.dart';
 import '../api_url.dart';
@@ -13,12 +15,14 @@ class CartScreen extends StatefulWidget {
   final List<CartItem> cartItems;
   final VoidCallback? onBackPressed;
   final VoidCallback? onCartCleared; // Added callback for cart clearing
+  final VoidCallback? onCartChanged;
 
   const CartScreen({
     super.key,
     required this.cartItems,
     this.onBackPressed,
     this.onCartCleared, // Added callback parameter
+    this.onCartChanged,
   });
 
   @override
@@ -49,12 +53,12 @@ class _CartScreenState extends State<CartScreen> {
                   // Back button
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F1F1),
+                      color: Colors.white70,
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF7F7F7F)),
+                      // border: Border.all(color: Colors.grey.shade300),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.grey),
+                      icon: const Icon(Icons.arrow_back, color: Colors.black87),
                       onPressed: () {
                         // Call the callback to navigate back to home
                         if (widget.onBackPressed != null) {
@@ -163,7 +167,7 @@ class _CartScreenState extends State<CartScreen> {
             border: Border.all(color: Colors.grey[200]!),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.4),
+                color: Colors.grey.withValues(alpha: 0.4),
                 spreadRadius: 1,
                 blurRadius: 4,
                 offset: const Offset(0, 2),
@@ -283,6 +287,7 @@ class _CartScreenState extends State<CartScreen> {
                                       widget.cartItems.remove(item);
                                     }
                                   });
+                                  widget.onCartChanged?.call(); // notify parent
                                 },
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(
@@ -320,6 +325,7 @@ class _CartScreenState extends State<CartScreen> {
                                   setState(() {
                                     item.quantity++;
                                   });
+                                  widget.onCartChanged?.call();
                                 },
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(
@@ -352,6 +358,7 @@ class _CartScreenState extends State<CartScreen> {
               setState(() {
                 widget.cartItems.remove(item);
               });
+              widget.onCartChanged?.call();
             },
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
@@ -368,7 +375,7 @@ class _CartScreenState extends State<CartScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, -2),

@@ -5,19 +5,19 @@ import 'language_model.dart';
 class LanguageService extends ChangeNotifier {
   static const String _languageKey = 'selected_language';
   static Language _currentLanguage = LanguageData.supportedLanguages.first;
-  
+
   // Getter for current language
   Language get currentLanguage => _currentLanguage;
-  
+
   // Getter for current language code
   String get currentLanguageCode => _currentLanguage.code;
-  
+
   // Getter for current language name
   String get currentLanguageName => _currentLanguage.name;
-  
+
   // Getter for current language native name
   String get currentLanguageNativeName => _currentLanguage.nativeName;
-  
+
   // Getter for current language flag
   String get currentLanguageFlag => _currentLanguage.flag;
 
@@ -30,7 +30,7 @@ class LanguageService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedLanguageCode = prefs.getString(_languageKey);
-      
+
       if (savedLanguageCode != null) {
         final savedLanguage = LanguageData.getLanguageByCode(savedLanguageCode);
         if (savedLanguage != null) {
@@ -103,8 +103,8 @@ class LanguageService extends ChangeNotifier {
 
   // Get current language display name (native name if available, otherwise English name)
   String get displayName {
-    return _currentLanguage.nativeName != _currentLanguage.name 
+    return _currentLanguage.nativeName != _currentLanguage.name
         ? '${_currentLanguage.nativeName} (${_currentLanguage.name})'
         : _currentLanguage.name;
   }
-} 
+}
