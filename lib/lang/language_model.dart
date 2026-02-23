@@ -231,7 +231,7 @@ class LanguageData {
 
         'close': 'Close',
       },
-    ),
+  ),
     Language(
       code: 'kh',
       name: 'Khmer',

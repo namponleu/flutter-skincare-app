@@ -26,6 +26,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isPasswordValid = false;
   bool _isTermsAccepted = false;
   bool _isLoading = false;
+  bool _isPhoneNumberValid = false;
 
   // Signup method: 'normal' or 'phone'
   String _signupMethod = 'normal';
@@ -49,9 +50,10 @@ class _SignupScreenState extends State<SignupScreen> {
     _isTermsAccepted = true; // Pre-checked as shown in image
 
     _nameController.addListener(_checkPasswordValidity);
-    _phoneController.addListener(_checkPasswordValidity);
+    // _phoneController.addListener(_checkPasswordValidity);
     _passwordController.addListener(_checkPasswordValidity);
     _otpController.addListener(() => setState(() {}));
+    _phoneController.addListener(_checkPhoneNumberValidity);
   }
 
   @override
@@ -71,11 +73,21 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
+  void _checkPhoneNumberValidity() {
+    setState(() {
+      _isPhoneNumberValid =
+          _phoneController.text.length >= 9 &&
+          _phoneController.text.length <= 12 &&
+          RegExp(r'(^(?:[+0]9)?[0-9]{10,12}$)').hasMatch(_phoneController.text);
+    });
+  }
+
   bool _isFormValid() {
     if (_signupMethod == 'phone') {
       // For phone OTP signup, need phone, password, OTP, and terms accepted
       return _phoneController.text.isNotEmpty &&
           _isPasswordValid &&
+          _isPhoneNumberValid &&
           _otpSent &&
           _otpController.text.isNotEmpty &&
           _isTermsAccepted;
@@ -84,6 +96,7 @@ class _SignupScreenState extends State<SignupScreen> {
       return _nameController.text.isNotEmpty &&
           _phoneController.text.isNotEmpty &&
           _isPasswordValid &&
+          _isPhoneNumberValid &&
           _isTermsAccepted;
     }
   }
@@ -107,7 +120,9 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       // Get auth token if available (for authenticated users)
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
+      final token = prefs.getString(
+        'auth_token',
+      ); // token string came from backend
 
       // Prepare headers
       final headers = <String, String>{
@@ -121,9 +136,11 @@ class _SignupScreenState extends State<SignupScreen> {
       }
 
       final phoneNumber = _phoneController.text.trim();
-      print('📱 Sending OTP to: $phoneNumber');
-      print('🔑 Has token: ${token != null && token.isNotEmpty}');
-      print('🌐 URL: ${ApiUrl.sendOtpUrl}');
+
+      // The print is showing in the console debug
+      print('\nSending OTP to: $phoneNumber');
+      print('Has token: ${token != null && token.isNotEmpty}');
+      print('URL: ${ApiUrl.sendOtpUrl}');
 
       final response = await http.post(
         Uri.parse(ApiUrl.sendOtpUrl),
@@ -131,8 +148,8 @@ class _SignupScreenState extends State<SignupScreen> {
         body: jsonEncode({'tel': phoneNumber}),
       );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -144,7 +161,7 @@ class _SignupScreenState extends State<SignupScreen> {
               responseData['data']?['otp_session_id'];
         });
 
-        print('✅ OTP sent successfully. Session ID: $_otpSessionId');
+        print('OTP sent successfully. Session ID: $_otpSessionId');
 
         // Extract OTP code from response if available (for testing when SMS not configured)
         final otpCode = responseData['data']?['otp'];
@@ -166,7 +183,7 @@ class _SignupScreenState extends State<SignupScreen> {
         }
       } else if (response.statusCode == 401) {
         // Unauthorized - token required
-        print('❌ 401 Unauthorized - Authentication required');
+        print('\n401 Unauthorized - Authentication required');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -185,7 +202,7 @@ class _SignupScreenState extends State<SignupScreen> {
           final errors = responseData['errors'] as Map<String, dynamic>;
           errorMessage = errors.values.first.toString();
         }
-        print('❌ Error: $errorMessage');
+        print('Error: $errorMessage');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -195,7 +212,7 @@ class _SignupScreenState extends State<SignupScreen> {
         );
       }
     } catch (e) {
-      print('❌ Exception in _sendOtp: $e');
+      print('Exception in _sendOtp: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -302,6 +319,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  //  Register User 
   Future<void> _registerUser() async {
     if (!_isFormValid()) return;
 
@@ -350,8 +368,8 @@ class _SignupScreenState extends State<SignupScreen> {
         registrationData['terms_accepted'] = _isTermsAccepted ? 1 : 0;
       }
 
-      print('📝 Registration data: $registrationData');
-      print('🌐 Register URL: ${ApiUrl.registerUrl}');
+      print('\nRegistration data: $registrationData');
+      print('Register URL: ${ApiUrl.registerUrl}');
 
       final response = await http.post(
         Uri.parse(ApiUrl.registerUrl),
@@ -362,14 +380,14 @@ class _SignupScreenState extends State<SignupScreen> {
         body: jsonEncode(registrationData),
       );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       Map<String, dynamic> responseData;
       try {
         responseData = jsonDecode(response.body) as Map<String, dynamic>;
       } catch (e) {
-        print('❌ Failed to parse response: $e');
+        print('Failed to parse response: $e');
         _showErrorDialog(
           'Invalid response from server: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}',
         );
@@ -448,6 +466,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  // Show error message dialog
   void _showErrorDialog(String message) {
     showDialog(
       context: context,

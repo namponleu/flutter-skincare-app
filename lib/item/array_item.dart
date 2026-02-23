@@ -1,4 +1,4 @@
-import '../models/coffee_product.dart';
+import '../models/skincare_product.dart';
 
 class ArrayItem {
   // Categories for filtering - COMMENTED OUT TO TEST DATABASE ONLY
@@ -19,6 +19,8 @@ class ArrayItem {
     'assets/images/banner/banner-2.png',
     'assets/images/banner/banner-3.png',
   ];
+
+  // ###### Testing Data
 
   // Skin care products data - COMMENTED OUT TO TEST DATABASE ONLY
   static final List<SkinCareProduct> products = [

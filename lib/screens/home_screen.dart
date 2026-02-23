@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import '../widgets/bottom_navigation.dart';
 import '../widgets/product_card.dart';
 import '../constants/app_colors.dart';
-import '../models/coffee_product.dart';
+import '../models/skincare_product.dart';
 import '../models/cart_item.dart';
 import '../models/banner.dart';
 import '../item/array_item.dart';

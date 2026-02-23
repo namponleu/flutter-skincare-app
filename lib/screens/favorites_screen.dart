@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/coffee_product.dart';
+import '../models/skincare_product.dart';
 import '../lang/index.dart';
 import '../constants/app_colors.dart';
 

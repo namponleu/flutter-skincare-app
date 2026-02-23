@@ -28,7 +28,6 @@ class MessageService {
         // Handle paginated response from Laravel
         final messagesData = data['messages'];
         if (messagesData is Map && messagesData['data'] != null) {
-          // Laravel paginated response: { "data": [...], "current_page": 1, ... }
           return (messagesData['data'] as List)
               .map((msg) => Message.fromJson(msg))
               .toList();
@@ -85,8 +84,8 @@ class MessageService {
       final body = endpoint['body'] as Map<String, dynamic>?;
       final description = endpoint['description'] as String;
       
-      // print('Trying endpoint ${i + 1}: $description');
-      // print('URL: $url, Method: $method');
+      print('Trying endpoint ${i + 1}: $description');
+      print('URL: $url, Method: $method');
       
       final response = method == 'POST' 
         ? await http.post(

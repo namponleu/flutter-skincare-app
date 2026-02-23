@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/coffee_product.dart';
+import '../models/skincare_product.dart';
 import '../constants/app_colors.dart';
 
 class ProductCard extends StatefulWidget {

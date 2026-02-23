@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'signin_screen.dart';
 import 'home_screen.dart';
-import 'signup_screen.dart';
 import '../constants/app_colors.dart';
 
+// Loading screen when open the app
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

@@ -1,7 +1,10 @@
 class ApiUrl {
   // Base URL for the API
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
-  // static const String baseUrl = 'http://10.0.1.173:8000/api';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL', // api_base_url input from the terminal when build for production
+    defaultValue: 'http://127.0.0.1:8000/api'
+  );
+  // static const String baseUrl = 'http://127.0.0.1:8000/api';
 
   // API Endpoints
   static const String register = '/register';
