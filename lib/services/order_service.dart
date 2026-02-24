@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skincare/api_url.dart';
 import 'package:skincare/models/cart_item.dart';

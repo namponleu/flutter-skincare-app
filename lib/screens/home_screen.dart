@@ -616,7 +616,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               items: bannerImages.asMap().entries.map((entry) {
                 final isNetworkImage = entry.value.startsWith('http');
                 return Builder(
-                  builder: (context) => Container(
+                  builder: (context) => SizedBox(
                     width: MediaQuery.of(context).size.width,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),

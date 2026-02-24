@@ -2,8 +2,10 @@ class ApiUrl {
   // Base URL for the API
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL', // api_base_url input from the terminal when build for production
-    defaultValue: 'http://127.0.0.1:8000/api'
+    // defaultValue: 'http://127.0.0.1:8000/api'
+    defaultValue: 'http://10.0.2.2:8000/api', // this is for run with emmulator device
   );
+  
   // static const String baseUrl = 'http://127.0.0.1:8000/api';
 
   // API Endpoints

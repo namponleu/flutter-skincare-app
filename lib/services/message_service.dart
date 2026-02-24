@@ -34,7 +34,7 @@ class MessageService {
               .toList();
         } else if (messagesData is List) {
           // Direct list response (fallback)
-          return (messagesData as List)
+          return (messagesData)
               .map((msg) => Message.fromJson(msg))
               .toList();
         } else {

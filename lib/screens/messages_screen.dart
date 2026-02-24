@@ -188,7 +188,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               radius: 20,
                               backgroundColor: AppColors.brandDark,
                               child: Text(
-                                (message.sender?.name?.isNotEmpty == true
+                                (message.sender?.name.isNotEmpty == true
                                     ? message.sender!.name
                                           .substring(0, 1)
                                           .toUpperCase()

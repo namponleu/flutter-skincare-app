@@ -33,11 +33,9 @@ class LanguageService extends ChangeNotifier {
 
       if (savedLanguageCode != null) {
         final savedLanguage = LanguageData.getLanguageByCode(savedLanguageCode);
-        if (savedLanguage != null) {
-          _currentLanguage = savedLanguage;
-          notifyListeners();
-        }
-      }
+        _currentLanguage = savedLanguage;
+        notifyListeners();
+            }
     } catch (e) {
       debugPrint('Error loading saved language: $e');
     }
@@ -56,7 +54,7 @@ class LanguageService extends ChangeNotifier {
   // Change language
   Future<void> changeLanguage(String languageCode) async {
     final newLanguage = LanguageData.getLanguageByCode(languageCode);
-    if (newLanguage != null && newLanguage != _currentLanguage) {
+    if (newLanguage != _currentLanguage) {
       _currentLanguage = newLanguage;
       await _saveLanguage(languageCode);
       notifyListeners();
@@ -66,7 +64,7 @@ class LanguageService extends ChangeNotifier {
   // Change language by name
   Future<void> changeLanguageByName(String languageName) async {
     final newLanguage = LanguageData.getLanguageByName(languageName);
-    if (newLanguage != null && newLanguage != _currentLanguage) {
+    if (newLanguage != _currentLanguage) {
       _currentLanguage = newLanguage;
       await _saveLanguage(newLanguage.code);
       notifyListeners();
