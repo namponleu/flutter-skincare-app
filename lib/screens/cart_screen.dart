@@ -1,106 +1,90 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-// import '../widgets/bottom_navigation.dart';
-import '../models/cart_item.dart';
 import '../lang/index.dart';
-import '../api_url.dart';
 import '../constants/app_colors.dart';
+import '../providers/cart_provider.dart';
+import '../services/order_service.dart';
 
 class CartScreen extends StatefulWidget {
-  final List<CartItem> cartItems;
   final VoidCallback? onBackPressed;
-  final VoidCallback? onCartCleared; // Added callback for cart clearing
-  final VoidCallback? onCartChanged;
 
-  const CartScreen({
-    super.key,
-    required this.cartItems,
-    this.onBackPressed,
-    this.onCartCleared, // Added callback parameter
-    this.onCartChanged,
-  });
+  const CartScreen({super.key, this.onBackPressed});
 
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
 
 class _CartScreenState extends State<CartScreen> {
-  double get subtotal => widget.cartItems.fold(
-    0,
-    (sum, item) => sum + (item.price * item.quantity),
-  );
-  double get discount => widget.cartItems.isNotEmpty ? 0.00 : 0.00;
-  double get shipping => widget.cartItems.isNotEmpty ? 0.00 : 0.00;
-  double get total => subtotal - discount + shipping;
-  bool _isProcessingOrder = false; // Added for loading state
+  bool _isProcessingOrder = false;
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LanguageService>(
-      builder: (context, languageService, child) {
-        return Column(
-          children: [
-            // Cart Header with back button and centered title
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  // Back button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white70,
-                      shape: BoxShape.circle,
-                      // border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                      onPressed: () {
-                        // Call the callback to navigate back to home
-                        if (widget.onBackPressed != null) {
-                          widget.onBackPressed!();
-                        }
-                      },
-                      iconSize: 20,
-                      padding: const EdgeInsets.all(8),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Centered title
-                  Expanded(
-                    child: Text(
-                      T.get(TranslationKeys.myCart),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+    return Consumer<CartProvider>(
+      builder: (context, cart, child) {
+        return Consumer<LanguageService>(
+          builder: (context, languageService, child) {
+            return Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F1F1),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF7F7F7F)),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.grey,
+                          ),
+                          onPressed: widget.onBackPressed,
+                          iconSize: 20,
+                          padding: const EdgeInsets.all(8),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          T.get(TranslationKeys.myCart),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(width: 56),
+                    ],
                   ),
-                  const SizedBox(width: 56), // Balance the back button
-                ],
-              ),
-            ),
+                ),
 
-            // Cart Items List or Empty State
-            Expanded(
-              child: widget.cartItems.isEmpty
-                  ? _buildEmptyCart()
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      itemCount: widget.cartItems.length,
-                      itemBuilder: (context, index) {
-                        return _buildCartItem(widget.cartItems[index]);
-                      },
-                    ),
-            ),
+                // Cart items or empty state
+                Expanded(
+                  child: cart.cartItems.isEmpty
+                      ? _buildEmptyCart()
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          itemCount: cart.cartItems.length,
+                          itemBuilder: (context, index) {
+                            return _buildCartItem(
+                              context,
+                              cart,
+                              cart.cartItems[index],
+                            );
+                          },
+                        ),
+                ),
 
-            // Order Summary and Checkout (only show if cart has items)
-            if (widget.cartItems.isNotEmpty) _buildOrderSummary(),
-          ],
+                // Order summary
+                if (cart.cartItems.isNotEmpty)
+                  _buildOrderSummary(context, cart),
+              ],
+            );
+          },
         );
       },
     );
@@ -129,9 +113,7 @@ class _CartScreenState extends State<CartScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {
-              // Navigate back to home screen
-            },
+            onPressed: widget.onBackPressed,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.brandDark,
               shape: RoundedRectangleBorder(
@@ -153,7 +135,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildCartItem(CartItem item) {
+  Widget _buildCartItem(BuildContext context, CartProvider cart, item) {
     return Stack(
       children: [
         Container(
@@ -188,24 +170,12 @@ class _CartScreenState extends State<CartScreen> {
                       ? Image.network(
                           item.image,
                           fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return const Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.brandDark,
-                                ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                                Icons.spa,
+                                color: AppColors.brandDark,
+                                size: 40,
                               ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.spa,
-                              color: AppColors.brandDark,
-                              size: 40,
-                            );
-                          },
                         )
                       : const Icon(
                           Icons.coffee,
@@ -222,24 +192,16 @@ class _CartScreenState extends State<CartScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.name
-                          .split(' ')
-                          .first, // Main name (e.g., "Cappuccino")
+                      item.name.split(' ').first,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
                       ),
                     ),
-                    // const SizedBox(height: 4),
                     Text(
-                      item.name
-                          .split(' ')
-                          .skip(1)
-                          .join(' '), // Description (e.g., "with Chocolate")
+                      item.name.split(' ').skip(1).join(' '),
                       style: const TextStyle(color: Colors.grey, fontSize: 14),
                     ),
-                    // const SizedBox(height: 2),
                     Text(
                       '\$${item.price.toStringAsFixed(2)}',
                       style: const TextStyle(
@@ -248,7 +210,6 @@ class _CartScreenState extends State<CartScreen> {
                         color: AppColors.brandDark,
                       ),
                     ),
-                    // const SizedBox(height: 4),
                     Row(
                       children: [
                         Text(
@@ -259,78 +220,30 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         const Spacer(),
-                        // Quantity Controls
+                        // Quantity controls
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Minus button with light gray background
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0E0E0),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.remove,
-                                  size: 12,
-                                  color: Colors.black87,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    if (item.quantity > 1) {
-                                      item.quantity--;
-                                    } else {
-                                      widget.cartItems.remove(item);
-                                    }
-                                  });
-                                  widget.onCartChanged?.call(); // notify parent
-                                },
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 24,
-                                  minHeight: 24,
-                                ),
-                              ),
+                            _quantityButton(
+                              color: const Color(0xFFE0E0E0),
+                              icon: Icons.remove,
+                              iconColor: Colors.black87,
+                              onTap: () => cart.decrementQauntity(item),
                             ),
                             const SizedBox(width: 8),
-                            // Quantity text (no background)
                             Text(
                               '${item.quantity}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Plus button with dark brown background
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: AppColors.brandDark,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.add,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    item.quantity++;
-                                  });
-                                  widget.onCartChanged?.call();
-                                },
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 24,
-                                  minHeight: 24,
-                                ),
-                              ),
+                            _quantityButton(
+                              color: AppColors.brandDark,
+                              icon: Icons.add,
+                              iconColor: Colors.white,
+                              onTap: () => cart.incrementQauntity(item),
                             ),
                           ],
                         ),
@@ -342,7 +255,8 @@ class _CartScreenState extends State<CartScreen> {
             ],
           ),
         ),
-        // Delete Button - positioned at absolute top right
+
+        // Delete button
         Positioned(
           top: 0,
           right: 0,
@@ -352,12 +266,7 @@ class _CartScreenState extends State<CartScreen> {
               color: Colors.grey,
               size: 20,
             ),
-            onPressed: () {
-              setState(() {
-                widget.cartItems.remove(item);
-              });
-              widget.onCartChanged?.call();
-            },
+            onPressed: () => cart.removeItem(item),
             padding: const EdgeInsets.all(4),
             constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
           ),
@@ -366,7 +275,27 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildOrderSummary() {
+  Widget _quantityButton({
+    required Color color,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(icon, size: 12, color: iconColor),
+      ),
+    );
+  }
+
+  Widget _buildOrderSummary(BuildContext context, CartProvider cart) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -382,42 +311,32 @@ class _CartScreenState extends State<CartScreen> {
       ),
       child: Column(
         children: [
-          // Order Summary
-          Column(
-            children: [
-              _buildSummaryRow(
-                T.get(TranslationKeys.cart),
-                '\$${subtotal.toStringAsFixed(2)}',
-              ),
-              _buildSummaryRow(
-                T.get(TranslationKeys.discount),
-                '\$${discount.toStringAsFixed(2)}',
-              ),
-              _buildSummaryRow(
-                T.get(TranslationKeys.shipping),
-                '\$${shipping.toStringAsFixed(2)}',
-              ),
-              const Divider(height: 24),
-              _buildSummaryRow(
-                T.get(TranslationKeys.total),
-                '\$${total.toStringAsFixed(2)}',
-                isTotal: true,
-              ),
-            ],
+          _summaryRow(
+            T.get(TranslationKeys.cart),
+            '\$${cart.subtotal.toStringAsFixed(2)}',
+          ),
+          _summaryRow(
+            T.get(TranslationKeys.discount),
+            '\$${cart.discount.toStringAsFixed(2)}',
+          ),
+          _summaryRow(
+            T.get(TranslationKeys.shipping),
+            '\$${cart.shipping.toStringAsFixed(2)}',
+          ),
+          const Divider(height: 24),
+          _summaryRow(
+            T.get(TranslationKeys.total),
+            '\$${cart.total.toStringAsFixed(2)}',
+            isTotal: true,
           ),
           const SizedBox(height: 24),
-
-          // Checkout Button
           SizedBox(
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
               onPressed: _isProcessingOrder
                   ? null
-                  : () {
-                      // Show payment method selection dialog
-                      _showPaymentMethodDialog();
-                    },
+                  : () => _showPaymentMethodDialog(context, cart),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.brandDark,
                 shape: RoundedRectangleBorder(
@@ -449,7 +368,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+  Widget _summaryRow(String label, String value, {bool isTotal = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -475,376 +394,237 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void _showPaymentMethodDialog() {
+  void _showPaymentMethodDialog(BuildContext context, CartProvider cart) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(T.get(TranslationKeys.selectPaymentMethod)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Payment Methods Section
-              Text(
-                T.get(TranslationKeys.paymentMethods),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // ABA Pay
-              ListTile(
-                leading: const Icon(Icons.account_balance, color: Colors.blue),
-                title: Text(T.get(TranslationKeys.abaPay)),
-                subtitle: Text(T.get(TranslationKeys.abaPayDesc)),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  _showPaymentTimingDialog('ABA Pay');
-                },
-              ),
-
-              // WING
-              ListTile(
-                leading: const Icon(Icons.flutter_dash, color: Colors.orange),
-                title: Text(T.get(TranslationKeys.wing)),
-                subtitle: Text(T.get(TranslationKeys.wingDesc)),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  _showPaymentTimingDialog('WING');
-                },
-              ),
-
-              // Credit Card
-              ListTile(
-                leading: const Icon(Icons.credit_card, color: Colors.green),
-                title: Text(T.get(TranslationKeys.creditCard)),
-                subtitle: Text(T.get(TranslationKeys.creditCardDesc)),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  _showPaymentTimingDialog('Credit Card');
-                },
-              ),
-
-              // Bank Transfer
-              ListTile(
-                leading: const Icon(Icons.payment, color: Colors.purple),
-                title: Text(T.get(TranslationKeys.bankTransfer)),
-                subtitle: Text(T.get(TranslationKeys.bankTransferDesc)),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  _showPaymentTimingDialog('Bank Transfer');
-                },
-              ),
-
-              // Cash on Delivery
-              ListTile(
-                leading: const Icon(Icons.wallet, color: Colors.brown),
-                title: Text(T.get(TranslationKeys.cashOnDelivery)),
-                subtitle: Text(T.get(TranslationKeys.cashOnDeliveryDesc)),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  _showPaymentTimingDialog('Cash on Delivery');
-                },
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text(T.get(TranslationKeys.cancel)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+      builder: (context) => AlertDialog(
+        title: Text(T.get(TranslationKeys.selectPaymentMethod)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              T.get(TranslationKeys.paymentMethods),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            _paymentTile(
+              context,
+              cart,
+              Icons.account_balance,
+              Colors.blue,
+              T.get(TranslationKeys.abaPay),
+              T.get(TranslationKeys.abaPayDesc),
+              'ABA Pay',
+            ),
+            _paymentTile(
+              context,
+              cart,
+              Icons.flutter_dash,
+              Colors.orange,
+              T.get(TranslationKeys.wing),
+              T.get(TranslationKeys.wingDesc),
+              'WING',
+            ),
+            _paymentTile(
+              context,
+              cart,
+              Icons.credit_card,
+              Colors.green,
+              T.get(TranslationKeys.creditCard),
+              T.get(TranslationKeys.creditCardDesc),
+              'Credit Card',
+            ),
+            _paymentTile(
+              context,
+              cart,
+              Icons.payment,
+              Colors.purple,
+              T.get(TranslationKeys.bankTransfer),
+              T.get(TranslationKeys.bankTransferDesc),
+              'Bank Transfer',
+            ),
+            _paymentTile(
+              context,
+              cart,
+              Icons.wallet,
+              Colors.brown,
+              T.get(TranslationKeys.cashOnDelivery),
+              T.get(TranslationKeys.cashOnDeliveryDesc),
+              'Cash on Delivery',
             ),
           ],
-        );
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(T.get(TranslationKeys.cancel)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  ListTile _paymentTile(
+    BuildContext context,
+    CartProvider cart,
+    IconData icon,
+    Color color,
+    String title,
+    String subtitle,
+    String method,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      onTap: () {
+        Navigator.of(context).pop();
+        _showPaymentTimingDialog(context, cart, method);
       },
     );
   }
 
-  void _showPaymentTimingDialog(String paymentMethod) {
+  void _showPaymentTimingDialog(
+    BuildContext context,
+    CartProvider cart,
+    String paymentMethod,
+  ) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(T.get(TranslationKeys.selectPaymentTiming)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${T.get(TranslationKeys.selectedPaymentMethod)}: $paymentMethod',
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-
-              // Pay Now Option
-              ListTile(
-                leading: const Icon(Icons.payment, color: Colors.green),
-                title: Text(T.get(TranslationKeys.payNow)),
-                subtitle: Text(T.get(TranslationKeys.payNowDesc)),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close timing dialog
-                  _processOrder(paymentMethod, 'pay_now');
-                },
-              ),
-
-              // Pay in Shop Option
-              ListTile(
-                leading: const Icon(Icons.store, color: Colors.blue),
-                title: Text(T.get(TranslationKeys.payInShop)),
-                subtitle: Text(T.get(TranslationKeys.payInShopDesc)),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close timing dialog
-                  _processOrder(paymentMethod, 'pay_in_shop');
-                },
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text(T.get(TranslationKeys.back)),
-              onPressed: () {
+      builder: (context) => AlertDialog(
+        title: Text(T.get(TranslationKeys.selectPaymentTiming)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${T.get(TranslationKeys.selectedPaymentMethod)}: $paymentMethod',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.payment, color: Colors.green),
+              title: Text(T.get(TranslationKeys.payNow)),
+              subtitle: Text(T.get(TranslationKeys.payNowDesc)),
+              onTap: () {
                 Navigator.of(context).pop();
-                _showPaymentMethodDialog(); // Show payment method dialog again
+                _processOrder(context, cart, paymentMethod, 'pay_now');
               },
             ),
-            TextButton(
-              child: Text(T.get(TranslationKeys.cancel)),
-              onPressed: () {
+            ListTile(
+              leading: const Icon(Icons.store, color: Colors.blue),
+              title: Text(T.get(TranslationKeys.payInShop)),
+              subtitle: Text(T.get(TranslationKeys.payInShopDesc)),
+              onTap: () {
                 Navigator.of(context).pop();
+                _processOrder(context, cart, paymentMethod, 'pay_in_shop');
               },
             ),
           ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showPaymentMethodDialog(context, cart);
+            },
+            child: Text(T.get(TranslationKeys.back)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(T.get(TranslationKeys.cancel)),
+          ),
+        ],
+      ),
     );
   }
 
-  void _processOrder(String paymentMethod, String paymentTiming) async {
-    // Show loading state
-    setState(() {
-      _isProcessingOrder = true;
-    });
+  Future<void> _processOrder(
+    BuildContext context,
+    CartProvider cart,
+    String paymentMethod,
+    String paymentTiming,
+  ) async {
+    setState(() => _isProcessingOrder = true);
 
-    try {
-      // Get user data from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id');
-      final authToken = prefs.getString('auth_token');
+    final result = await OrderService.processOrder(
+      cartItems: cart.cartItems.toList(),
+      paymentMehod: paymentMethod,
+      paymentTimimng: paymentTiming,
+    );
 
-      if (userId == null || authToken == null) {
-        throw Exception('User not authenticated');
-      }
+    setState(() => _isProcessingOrder = false);
 
-      // Prepare order data according to API specification
-      final orderData = {
-        'user_id': int.parse(userId),
-        'payment_method': paymentMethod,
-        'status': paymentTiming == 'pay_now' ? 'paid' : 'pending',
-        'items': widget.cartItems
-            .map(
-              (item) => {
-                'product_id': item.productId,
-                'product_name':
-                    item.name, // Add product name - this was missing!
-                'qty': item.quantity,
-                'size': item.size ?? 'regular',
-                'price': item.price,
-              },
-            )
-            .toList(),
-      };
+    if (!mounted) return;
 
-      // print('Order data being sent: $orderData');
-
-      // Make API call
-      final response = await http.post(
-        Uri.parse(ApiUrl.ordersUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $authToken',
-        },
-        body: jsonEncode(orderData),
+    if (result.suceess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                T.get(TranslationKeys.orderPlacedSuccessfully),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${T.get(TranslationKeys.orderNumber)}: #${result.orderId}',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.brand,
+          duration: const Duration(seconds: 4),
+        ),
       );
 
-      // print('Order API Response Status: ${response.statusCode}');
-      // print('Order API Response Body: ${response.body}');
-      // print('Order API Headers: ${response.headers}');
+      // Clear cart via provider
+      cart.clearCart();
 
-      // Check if response body is valid JSON
-      Map<String, dynamic> responseData;
-      try {
-        responseData = jsonDecode(response.body);
-        // print('Parsed JSON successfully: $responseData');
-      } catch (e) {
-        // print('JSON parsing failed: $e');
-        _showErrorDialog(
-          'Invalid response format from server: ${response.body}',
-        );
-        return;
-      }
-
-      // Check for success in multiple ways
-      bool isSuccess = false;
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (responseData['success'] == true) {
-          isSuccess = true;
-        } else if (responseData['data'] != null) {
-          isSuccess = true;
-        } else if (responseData['order'] != null) {
-          isSuccess = true;
-        } else if (responseData['message'] != null &&
-            responseData['message'].toString().toLowerCase().contains(
-              'success',
-            )) {
-          isSuccess = true;
-        } else if (responseData.isNotEmpty) {
-          // If we get any data back with 200/201, treat as success for now
-          isSuccess = true;
-          // print('Treating as success because we got data with status ${response.statusCode}');
-        }
-      }
-
-      // print('Order success check: status=${response.statusCode}, success=$isSuccess');
-
-      if (isSuccess) {
-        // Order created successfully
-        String orderId = 'N/A';
-
-        // Try to extract order ID from various possible structures
-        if (responseData['data'] != null) {
-          if (responseData['data']['order'] != null) {
-            orderId = responseData['data']['order']['id']?.toString() ?? 'N/A';
-          } else if (responseData['data']['id'] != null) {
-            orderId = responseData['data']['id']?.toString() ?? 'N/A';
-          }
-        } else if (responseData['order'] != null) {
-          orderId = responseData['order']['id']?.toString() ?? 'N/A';
-        } else if (responseData['id'] != null) {
-          orderId = responseData['id']?.toString() ?? 'N/A';
-        }
-
-        // print('Extracted order ID: $orderId');
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  T.get(TranslationKeys.orderPlacedSuccessfully),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '${T.get(TranslationKeys.orderNumber)}: #$orderId',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                Text(
-                  '${T.get(TranslationKeys.cartCleared)}',
-                  style: const TextStyle(fontSize: 12, color: Colors.green),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.brand,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-
-        // Clear cart after successful order
-        if (widget.onCartCleared != null) {
-          widget.onCartCleared!();
-        }
-
-        // Navigate back to home screen after successful order
-        Future.delayed(const Duration(seconds: 2), () {
-          if (widget.onBackPressed != null) {
-            widget.onBackPressed!();
-          }
-        });
-
-        // Show success message with order details
-      } else {
-        // API error
-        // print('Order failed - Status: ${response.statusCode}, Response: $responseData');
-        String errorMessage = T.get(TranslationKeys.orderCreationFailed);
-
-        if (responseData['errors'] != null) {
-          final errors = responseData['errors'] as Map<String, dynamic>;
-          errorMessage = errors.values.first.toString();
-        } else if (responseData['message'] != null) {
-          errorMessage = responseData['message'];
-        } else {
-          // Show more detailed error information
-          errorMessage =
-              'Status: ${response.statusCode}\nResponse: ${response.body}';
-        }
-
-        _showErrorDialog(errorMessage);
-      }
-    } catch (e) {
-      // Network or other error
-      String errorMessage = T.get(TranslationKeys.networkError);
-      if (e.toString().contains('User not authenticated')) {
-        errorMessage = T.get(TranslationKeys.userNotAuthenticated);
-      } else {
-        errorMessage =
-            '${T.get(TranslationKeys.networkError)}: ${e.toString()}';
-      }
-
-      _showErrorDialog(errorMessage);
-    } finally {
-      // Hide loading state
-      setState(() {
-        _isProcessingOrder = false;
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) widget.onBackPressed?.call();
       });
+    } else {
+      _showErrorDialog(context, result.errorMessage ?? 'Unknown error');
     }
   }
 
-  void _showErrorDialog(String message) {
+  void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                T.get(TranslationKeys.error),
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(fontSize: 16, color: Colors.black87),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                T.get(TranslationKeys.ok),
-                style: const TextStyle(
-                  color: AppColors.brand,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              T.get(TranslationKeys.error),
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
-        );
-      },
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 16, color: Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              T.get(TranslationKeys.ok),
+              style: const TextStyle(
+                color: AppColors.brand,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

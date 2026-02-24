@@ -58,7 +58,7 @@ class BottomNavigation extends StatelessWidget {
                 _buildNavItem(
                   context,
                   index: 1,
-                  icon: Icons.favorite,
+                  icon: Icons.favorite_outline,
                   activeIcon: Icons.favorite,
                   label: T.get(TranslationKeys.favorites),
                   badgeCount: favoriteCount,
@@ -109,41 +109,31 @@ class BottomNavigation extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(microseconds: 200),
-        padding: isSelected
-            ? const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
-            : const EdgeInsets.all(12.00),
-        decoration: isSelected
-            ? BoxDecoration(
-                color: AppColors.brandDark,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white, width: 1),
-              )
-            : null,
-        // padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        // decoration: BoxDecoration(
-        //   color: AppColors.brandDark,
-        //   borderRadius: BorderRadius.circular(20),
-        //   border: Border.all(color: Colors.white, width: 1),
-        // ),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.white70,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white, width: 1),
+        ),
         child: isSelected
             ?
               // Active: pill style with icon + label side by side
-              Row(
+              Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildIconWithBadge(
                     icon: activeIcon,
                     badgeCount: badgeCount,
-                    iconColor: Colors.white,
+                    iconColor: AppColors.brandDark,
                   ),
                   if (label.isNotEmpty) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(height: 4),
                     Text(
                       label,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.brandDark,
                         fontWeight: FontWeight.w600,
-                        fontSize: 18,
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -158,7 +148,7 @@ class BottomNavigation extends StatelessWidget {
                     badgeCount: badgeCount,
                     iconColor: AppColors.brandDark,
                   ),
-                  const SizedBox(height: 13),
+                  const SizedBox(height: 4),
                   Text(
                     label,
                     style: TextStyle(
@@ -181,25 +171,25 @@ class BottomNavigation extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Icon(icon, color: iconColor, size: 24),
+        Icon(icon, color: iconColor),
         if (badgeCount > 0)
           Positioned(
-            right: -4,
+            right: -5,
             top: -4,
             child: Container(
-              padding: const EdgeInsets.all(2),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 color: Colors.red,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: Colors.white, width: 1),
               ),
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              // constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
               child: Text(
                 badgeCount > 99 ? '99+' : badgeCount.toString(),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.normal,
                 ),
                 textAlign: TextAlign.center,
               ),
