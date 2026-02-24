@@ -1,32 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/skincare_product.dart';
 import '../constants/app_colors.dart';
+import '../providers/cart_provider.dart';
+import '../providers/favorite_provider.dart';
+import '../lang/index.dart';
 
-class ProductCard extends StatefulWidget {
+class ProductCard extends StatelessWidget {
   final SkinCareProduct product;
   final VoidCallback onTap;
-  final VoidCallback onAddToCart;
-  final bool isFavorite;
-  final Function(bool) onFavoriteChanged;
 
-  const ProductCard({
-    super.key,
-    required this.product,
-    required this.onTap,
-    required this.onAddToCart,
-    this.isFavorite = false,
-    required this.onFavoriteChanged,
-  });
+  const ProductCard({super.key, required this.product, required this.onTap});
 
-  @override
-  State<ProductCard> createState() => _ProductCardState();
-}
-
-class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
+    // Watch only what this card needs — efficient rebuilds
+    final isFavorite = context.watch<FavoriteProvider>().isFavorite(product);
+
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -46,9 +38,9 @@ class _ProductCardState extends State<ProductCard> {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(12),
                       ),
-                      child: widget.product.image.isNotEmpty
+                      child: product.image.isNotEmpty
                           ? Image.network(
-                              widget.product.image,
+                              product.image,
                               width: double.infinity,
                               fit: BoxFit.cover,
                               loadingBuilder:
@@ -96,7 +88,8 @@ class _ProductCardState extends State<ProductCard> {
                               ),
                             ),
                     ),
-                    // Rating badge - moved to left side
+
+                    // Rating badge
                     Positioned(
                       top: 6,
                       left: 6,
@@ -119,7 +112,7 @@ class _ProductCardState extends State<ProductCard> {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              '${widget.product.rate}',
+                              '${product.rate}',
                               style: const TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
@@ -130,13 +123,30 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                       ),
                     ),
-                    // Favorite button - added to right side
+
+                    // Favorite button
                     Positioned(
                       top: 6,
                       right: 6,
                       child: GestureDetector(
                         onTap: () {
-                          widget.onFavoriteChanged(!widget.isFavorite);
+                          final wasAdded = context
+                              .read<FavoriteProvider>()
+                              .toggleFavorite(product);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                wasAdded
+                                    ? '${product.name} ${T.get(TranslationKeys.addedToFavorites)}'
+                                    : '${product.name} ${T.get(TranslationKeys.removedFromFavorites)}',
+                              ),
+                              backgroundColor: wasAdded
+                                  ? Colors.red[400]
+                                  : Colors.grey[600],
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
                         },
                         child: Container(
                           padding: const EdgeInsets.all(4),
@@ -145,9 +155,7 @@ class _ProductCardState extends State<ProductCard> {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            widget.isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
                             color: Colors.red,
                             size: 16,
                           ),
@@ -168,7 +176,7 @@ class _ProductCardState extends State<ProductCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      widget.product.name,
+                      product.name,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -177,7 +185,7 @@ class _ProductCardState extends State<ProductCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      widget.product.description,
+                      product.description,
                       style: const TextStyle(
                         fontSize: 10,
                         color: Colors.black54,
@@ -189,7 +197,7 @@ class _ProductCardState extends State<ProductCard> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '\$${widget.product.price.toStringAsFixed(2)}',
+                          '\$${product.price.toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -197,7 +205,25 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: widget.onAddToCart,
+                          onTap: () {
+                            final added = context
+                                .read<CartProvider>()
+                                .addToCart(product);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  added
+                                      ? '${product.name} ${T.get(TranslationKeys.addedToCart)}'
+                                      : '${product.name} ${T.get(TranslationKeys.alreadyInCart)}',
+                                ),
+                                backgroundColor: added
+                                    ? AppColors.brandDark
+                                    : Colors.orange[700],
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
                           child: Container(
                             width: 24,
                             height: 24,

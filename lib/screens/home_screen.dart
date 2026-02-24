@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../widgets/bottom_navigation.dart';
-import '../widgets/product_card.dart';
+import '../widgets/product_cart.dart';
 import '../constants/app_colors.dart';
 import '../models/skincare_product.dart';
 import '../models/cart_item.dart';

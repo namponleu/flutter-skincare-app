@@ -30,6 +30,17 @@ class FavoriteProvider extends ChangeNotifier {
     return wasAdded;
   }
 
+  Future<void> loadFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favoritesList = prefs.getStringList(_favoritesKey) ?? [];
+      _favoriteProductIds.addAll(favoritesList);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading favorites: $e');
+    }
+  }
+
   Future<void> _saveFavorites() async {
     try {
       final prefs = await SharedPreferences.getInstance();
