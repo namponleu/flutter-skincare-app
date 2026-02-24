@@ -137,10 +137,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
       final phoneNumber = _phoneController.text.trim();
 
-      // The print is showing in the console debug
-      print('\nSending OTP to: $phoneNumber');
-      print('Has token: ${token != null && token.isNotEmpty}');
-      print('URL: ${ApiUrl.sendOtpUrl}');
+      // The debugPrint is showing in the console debug
+      debugPrint('\nSending OTP to: $phoneNumber');
+      debugPrint('Has token: ${token != null && token.isNotEmpty}');
+      debugPrint('URL: ${ApiUrl.sendOtpUrl}');
 
       final response = await http.post(
         Uri.parse(ApiUrl.sendOtpUrl),
@@ -148,8 +148,8 @@ class _SignupScreenState extends State<SignupScreen> {
         body: jsonEncode({'tel': phoneNumber}),
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -161,7 +161,7 @@ class _SignupScreenState extends State<SignupScreen> {
               responseData['data']?['otp_session_id'];
         });
 
-        print('OTP sent successfully. Session ID: $_otpSessionId');
+        debugPrint('OTP sent successfully. Session ID: $_otpSessionId');
 
         // Extract OTP code from response if available (for testing when SMS not configured)
         final otpCode = responseData['data']?['otp'];
@@ -183,7 +183,7 @@ class _SignupScreenState extends State<SignupScreen> {
         }
       } else if (response.statusCode == 401) {
         // Unauthorized - token required
-        print('\n401 Unauthorized - Authentication required');
+        debugPrint('\n401 Unauthorized - Authentication required');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -202,7 +202,7 @@ class _SignupScreenState extends State<SignupScreen> {
           final errors = responseData['errors'] as Map<String, dynamic>;
           errorMessage = errors.values.first.toString();
         }
-        print('Error: $errorMessage');
+        debugPrint('Error: $errorMessage');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -212,7 +212,7 @@ class _SignupScreenState extends State<SignupScreen> {
         );
       }
     } catch (e) {
-      print('Exception in _sendOtp: $e');
+      debugPrint('Exception in _sendOtp: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -255,9 +255,9 @@ class _SignupScreenState extends State<SignupScreen> {
         headers['Authorization'] = 'Bearer $token';
       }
 
-      print('Verifying OTP for: ${_phoneController.text.trim()}');
-      print('OTP: ${_otpController.text.trim()}');
-      print('Session ID: $_otpSessionId');
+      debugPrint('Verifying OTP for: ${_phoneController.text.trim()}');
+      debugPrint('OTP: ${_otpController.text.trim()}');
+      debugPrint('Session ID: $_otpSessionId');
 
       final response = await http.post(
         Uri.parse(ApiUrl.verifyOtpUrl),
@@ -368,8 +368,8 @@ class _SignupScreenState extends State<SignupScreen> {
         registrationData['terms_accepted'] = _isTermsAccepted ? 1 : 0;
       }
 
-      print('\nRegistration data: $registrationData');
-      print('Register URL: ${ApiUrl.registerUrl}');
+      debugPrint('\nRegistration data: $registrationData');
+      debugPrint('Register URL: ${ApiUrl.registerUrl}');
 
       final response = await http.post(
         Uri.parse(ApiUrl.registerUrl),
@@ -380,14 +380,14 @@ class _SignupScreenState extends State<SignupScreen> {
         body: jsonEncode(registrationData),
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       Map<String, dynamic> responseData;
       try {
         responseData = jsonDecode(response.body) as Map<String, dynamic>;
       } catch (e) {
-        print('Failed to parse response: $e');
+        debugPrint('Failed to parse response: $e');
         _showErrorDialog(
           'Invalid response from server: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}',
         );
@@ -448,8 +448,8 @@ class _SignupScreenState extends State<SignupScreen> {
           errorMessage = responseData['message'];
         }
 
-        print('❌ Registration failed: $errorMessage');
-        print('❌ Full response: ${response.body}');
+        debugPrint('❌ Registration failed: $errorMessage');
+        debugPrint('❌ Full response: ${response.body}');
 
         // Show error as popup dialog
         _showErrorDialog(errorMessage);
@@ -547,7 +547,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.brand.withOpacity(0.1),
+                  color: AppColors.brand.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.brand, width: 2),
                 ),

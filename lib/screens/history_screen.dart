@@ -58,8 +58,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ApiUrl.ordersUrl,
       ).replace(queryParameters: {'user_id': userId});
 
-      print('📥 Loading orders for user_id: $userId');
-      print('🌐 Orders URL: $uri');
+      debugPrint('📥 Loading orders for user_id: $userId');
+      debugPrint('🌐 Orders URL: $uri');
 
       final response = await http.get(
         uri,
@@ -70,8 +70,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         },
       );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
+      debugPrint('📥 Response status: ${response.statusCode}');
+      debugPrint('📥 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -88,7 +88,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             _isLoading = false;
           });
 
-          print('✅ Loaded ${_orders.length} orders');
+          debugPrint('✅ Loaded ${_orders.length} orders');
         } else {
           setState(() {
             _errorMessage = responseData['message'] ?? 'Failed to load orders';

@@ -42,7 +42,7 @@ class _SkinCareDetailScreenState extends State<SkinCareDetailScreen> {
         isFavorite = favoritesList.contains(widget.product.name);
       });
     } catch (e) {
-      print('Error checking favorite status: $e');
+      debugPrint('Error checking favorite status: $e');
     }
   }
 
@@ -82,7 +82,7 @@ class _SkinCareDetailScreenState extends State<SkinCareDetailScreen> {
         ),
       );
     } catch (e) {
-      print('Error toggling favorite: $e');
+      debugPrint('Error toggling favorite: $e');
     }
   }
 

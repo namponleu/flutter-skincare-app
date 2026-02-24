@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class SkinCareProduct {
   final int id;
   final String name;
@@ -69,8 +71,8 @@ class SkinCareProduct {
         volume: json['volume']?.toString() ?? json['size']?.toString(),
       );
     } catch (e) {
-      print('Error creating SkinCareProduct from JSON: $e');
-      print('JSON data: $json');
+      debugPrint('Error creating SkinCareProduct from JSON: $e');
+      debugPrint('JSON data: $json');
       // Return a default product if parsing fails
       return SkinCareProduct(
         id: 0,
@@ -100,7 +102,7 @@ class SkinCareProduct {
       try {
         return double.parse(value);
       } catch (e) {
-        print('Failed to parse double from string: "$value"');
+        debugPrint('Failed to parse double from string: "$value"');
         return 0.0;
       }
     }

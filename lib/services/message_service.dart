@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
@@ -84,8 +85,8 @@ class MessageService {
       final body = endpoint['body'] as Map<String, dynamic>?;
       final description = endpoint['description'] as String;
       
-      print('Trying endpoint ${i + 1}: $description');
-      print('URL: $url, Method: $method');
+      debugPrint('Trying endpoint ${i + 1}: $description');
+      debugPrint('URL: $url, Method: $method');
       
       final response = method == 'POST' 
         ? await http.post(
@@ -105,23 +106,23 @@ class MessageService {
             },
           );
       
-      // print('Response ${i + 1} - Status: ${response.statusCode}');
+      debugPrint('Response ${i + 1} - Status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
-        // print('Success with endpoint: $url');
-        // print('Response Body: ${response.body}');
+        debugPrint('Success with endpoint: $url');
+        debugPrint('Response Body: ${response.body}');
         
         final data = jsonDecode(response.body);
         if (data['success']) {
           // Handle conversations response
           final conversationsData = data['conversations'];
-          // print('Conversations Data: $conversationsData');
+          debugPrint('Conversations Data: $conversationsData');
           
           if (conversationsData is List && conversationsData.isNotEmpty) {
             // Get the first conversation and fetch its messages
             final firstConversation = conversationsData[0];
             final otherUserId = firstConversation['other_user_id'];
-            // print('Getting messages with user ID: $otherUserId');
+            debugPrint('Getting messages with user ID: $otherUserId');
             
             // Now fetch messages with this user
             final messagesResponse = await http.get(
@@ -138,12 +139,12 @@ class MessageService {
                 final messages = messagesData['messages'];
                 if (messages is Map && messages['data'] != null) {
                   final messagesList = messages['data'] as List;
-                  // print('Messages List Length: ${messagesList.length}');
+                  debugPrint('Messages List Length: ${messagesList.length}');
                   
                   final parsedMessages = messagesList
                       .map((msg) => Message.fromJson(msg))
                       .toList();
-                  // print('Parsed Messages Count: ${parsedMessages.length}');
+                  debugPrint('Parsed Messages Count: ${parsedMessages.length}');
                   return parsedMessages;
                 }
               }
@@ -151,14 +152,14 @@ class MessageService {
           }
           
           // If no conversations or failed to get messages, return empty list
-          // print('No conversations found or failed to get messages');
+          debugPrint('No conversations found or failed to get messages');
           return [];
         } else {
-          // print('API returned success: false, message: ${data['message']}');
+          debugPrint('API returned success: false, message: ${data['message']}');
           throw Exception(data['message'] ?? 'Failed to load messages');
         }
       } else {
-        // print('Endpoint ${i + 1} failed with status: ${response.statusCode}');
+        debugPrint('Endpoint ${i + 1} failed with status: ${response.statusCode}');
         if (i == endpoints.length - 1) {
           // Last attempt failed, throw error
           throw Exception('All message endpoints failed. Last status: ${response.statusCode}');
@@ -193,7 +194,7 @@ class MessageService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success']) {
-        print('Successfully marked messages as read from sender: $senderId');
+        debugPrint('Successfully marked messages as read from sender: $senderId');
       } else {
         throw Exception(data['message'] ?? 'Failed to mark messages as read');
       }

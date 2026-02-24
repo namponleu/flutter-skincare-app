@@ -39,7 +39,7 @@ class LanguageService extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error loading saved language: $e');
+      debugPrint('Error loading saved language: $e');
     }
   }
 
@@ -49,7 +49,7 @@ class LanguageService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_languageKey, languageCode);
     } catch (e) {
-      print('Error saving language: $e');
+      debugPrint('Error saving language: $e');
     }
   }
 

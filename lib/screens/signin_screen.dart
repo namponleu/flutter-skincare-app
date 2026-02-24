@@ -134,7 +134,7 @@ class _SigninScreenState extends State<SigninScreen> {
       }
 
       final phoneNumber = _identifierController.text.trim();
-      print('📱 Sending OTP to: $phoneNumber');
+      debugPrint('📱 Sending OTP to: $phoneNumber');
 
       final response = await http.post(
         Uri.parse(ApiUrl.sendOtpUrl),
@@ -142,8 +142,8 @@ class _SigninScreenState extends State<SigninScreen> {
         body: jsonEncode({'tel': phoneNumber}),
       );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
+      debugPrint('📥 Response status: ${response.statusCode}');
+      debugPrint('📥 Response body: ${response.body}');
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -182,7 +182,7 @@ class _SigninScreenState extends State<SigninScreen> {
         );
       }
     } catch (e) {
-      print('❌ Exception in _sendOtp: $e');
+      debugPrint('❌ Exception in _sendOtp: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -226,9 +226,9 @@ class _SigninScreenState extends State<SigninScreen> {
         };
       }
 
-      print('🔐 Login method: $_loginMethod');
-      print('📝 Login data: $loginData');
-      print('🌐 Login URL: ${ApiUrl.loginUrl}');
+      debugPrint('🔐 Login method: $_loginMethod');
+      debugPrint('📝 Login data: $loginData');
+      debugPrint('🌐 Login URL: ${ApiUrl.loginUrl}');
 
       final response = await http.post(
         Uri.parse(ApiUrl.loginUrl),
@@ -239,14 +239,14 @@ class _SigninScreenState extends State<SigninScreen> {
         body: jsonEncode(loginData),
       );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
+      debugPrint('📥 Response status: ${response.statusCode}');
+      debugPrint('📥 Response body: ${response.body}');
 
       Map<String, dynamic> responseData;
       try {
         responseData = jsonDecode(response.body) as Map<String, dynamic>;
       } catch (e) {
-        print('❌ Failed to parse response: $e');
+        debugPrint('❌ Failed to parse response: $e');
         _showErrorDialog(
           'Invalid response from server: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}',
         );
@@ -301,9 +301,9 @@ class _SigninScreenState extends State<SigninScreen> {
         await _saveUserData(token.toString(), userDataMap);
 
         // Navigate to home screen after a short delay
-        print('Login successful, navigating to home screen in 1 second...');
+        debugPrint('Login successful, navigating to home screen in 1 second...');
         Future.delayed(const Duration(seconds: 1), () {
-          print('Navigating to home screen now...');
+          debugPrint('Navigating to home screen now...');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -328,8 +328,8 @@ class _SigninScreenState extends State<SigninScreen> {
           errorMessage = responseData['message'];
         }
 
-        print('❌ Login failed: $errorMessage');
-        print('❌ Full response: ${response.body}');
+        debugPrint('❌ Login failed: $errorMessage');
+        debugPrint('❌ Full response: ${response.body}');
 
         _showErrorDialog(errorMessage);
       }
