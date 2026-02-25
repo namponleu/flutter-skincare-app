@@ -2,7 +2,8 @@ import '../models/skincare_product.dart';
 
 class ArrayItem {
   // Categories for filtering - COMMENTED OUT TO TEST DATABASE ONLY
-  static const List<String> categories = [
+  // static const List<String> categories = [
+  static List<String> categories = [
     'All Products',
     'Cleansers',
     'Toners',
@@ -23,7 +24,8 @@ class ArrayItem {
   // ###### Testing Data
 
   // Skin care products data - COMMENTED OUT TO TEST DATABASE ONLY
-  static final List<SkinCareProduct> products = [
+  // static final List<SkinCareProduct> products = [
+  static  List<SkinCareProduct> products = [
     SkinCareProduct(
       id: 1,
       name: 'Cleansers',
